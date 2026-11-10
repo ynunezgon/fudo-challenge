@@ -1,0 +1,307 @@
+openapi: 3.0.3
+info:
+  title: Fudo Products API
+  version: 1.0.0
+  description: |
+    API JSON construida con Rack (sin Rails).
+
+    - Autenticación con token Bearer obtenido en `POST /auth`.
+    - La creación de productos es asíncrona: `POST /products` responde `202 Accepted`
+      con un job; el producto queda disponible a los 5 segundos.
+    - Todas las respuestas se comprimen con gzip cuando el cliente envía `Accept-Encoding: gzip`.
+  contact:
+    name: Yanina Emiliana Nuñez Gonzalez
+servers:
+  - url: http://localhost:9292
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Products
+  - name: Jobs
+  - name: Static
+paths:
+  /auth:
+    post:
+      tags: [Auth]
+      summary: Obtener un token de acceso
+      operationId: authenticate
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Credentials"
+            example:
+              username: admin
+              password: secret
+      responses:
+        "200":
+          description: Credenciales válidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Token"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: invalid_credentials
+  /products:
+    get:
+      tags: [Products]
+      summary: Listar productos
+      operationId: listProducts
+      responses:
+        "200":
+          description: Productos ya creados
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Product"
+              example:
+                data:
+                  - id: 1
+                    name: Pizza muzzarella
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Products]
+      summary: Solicitar la creación de un producto (asíncrono)
+      description: |
+        No crea el producto en el momento: registra un job y responde `202 Accepted`.
+        El producto estará disponible en `GET /products` a los 5 segundos.
+        El estado del pedido se consulta en la URL indicada por el header `Location`.
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewProduct"
+            example:
+              name: Pizza muzzarella
+      responses:
+        "202":
+          description: Pedido aceptado; el producto se creará de forma asíncrona
+          headers:
+            Location:
+              description: URL para consultar el estado del job
+              schema:
+                type: string
+                example: /jobs/3f6c1b9e-6d2a-4a51-9a8e-1c2d3e4f5a6b
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: El nombre es inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: invalid_name
+                message: name es obligatorio (texto de 1 a 255 caracteres).
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: Consultar un producto
+      operationId: getProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /jobs/{id}:
+    get:
+      tags: [Jobs]
+      summary: Consultar el estado de una creación de producto
+      operationId: getJob
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Estado del job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /openapi.yaml:
+    get:
+      tags: [Static]
+      summary: Esta especificación (nunca se cachea)
+      security: []
+      responses:
+        "200":
+          description: Archivo OpenAPI
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /AUTHORS:
+    get:
+      tags: [Static]
+      summary: Autora del proyecto (cacheado 24 hs)
+      security: []
+      responses:
+        "200":
+          description: Nombre y apellido de la autora
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: public, max-age=86400
+          content:
+            text/plain:
+              schema:
+                type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Token opaco obtenido en POST /auth. Vence a la hora.
+  schemas:
+    Credentials:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+    Token:
+      type: object
+      required: [token, token_type, expires_in]
+      properties:
+        token:
+          type: string
+          example: 9f2c0b6a4e...
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          description: Segundos hasta el vencimiento
+          example: 3600
+    NewProduct:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+    Product:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Pizza muzzarella
+    Job:
+      type: object
+      required: [job_id, status, estimated_ready_at]
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        product_id:
+          type: integer
+          nullable: true
+          description: Id del producto creado; null mientras el job está pendiente
+        estimated_ready_at:
+          type: string
+          format: date-time
+        error:
+          type: string
+          description: Sólo presente si el job falló
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+  responses:
+    BadRequest:
+      description: Body ausente o JSON inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: bad_request
+    Unauthorized:
+      description: Falta un token válido
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+            example: Bearer realm="fudo-api"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: unauthorized
+    NotFound:
+      description: Recurso inexistente
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: not_found
