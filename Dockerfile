@@ -4,7 +4,6 @@ FROM ruby:3.3
 WORKDIR /app
 
 ENV RACK_ENV=production \
-    BUNDLE_WITHOUT=test \
     PORT=9292
 
 # Primero sólo el Gemfile para aprovechar la caché de capas de Docker.

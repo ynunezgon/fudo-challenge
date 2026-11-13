@@ -9,8 +9,7 @@ require_relative "api"
 module Fudo
   PUBLIC_DIR = File.expand_path("../public", __dir__)
 
-  # Arma el pipeline completo. Lo usan config.ru y los tests, así ambos
-  # prueban exactamente la misma aplicación.
+  # Arma el pipeline completo utilizado por config.ru.
   #
   # Orden de middlewares (de afuera hacia adentro):
   #   1. Rack::Deflater  -> comprime TODO lo que sale si el cliente manda Accept-Encoding: gzip

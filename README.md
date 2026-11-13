@@ -13,7 +13,6 @@ Autora: Yanina Emiliana Nuñez Gonzalez
 | `app/` | Código de la aplicación |
 | `public/openapi.yaml` | Especificación OpenAPI 3.0 (servida en `/openapi.yaml`) |
 | `public/AUTHORS` | Autora (servida en `/AUTHORS`) |
-| `test/` | Tests con Minitest y rack-test |
 
 ## Cómo levantarlo
 
@@ -44,14 +43,6 @@ La API queda en `http://localhost:9292`.
 | `PRODUCT_DELAY` | `5` | Segundos hasta que un producto queda disponible |
 | `PORT` | `9292` | Puerto de Puma |
 | `PUMA_THREADS` | `5` | Hilos de Puma |
-
-## Tests
-
-```bash
-bundle exec rake test
-```
-
-Los tests usan un delay de 0,3 s para no esperar 5 segundos.
 
 ## Endpoints
 
