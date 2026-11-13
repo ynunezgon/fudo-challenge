@@ -1,3 +1,3 @@
 # HTTP
 
-HTTP (Hypertext Transfer Protocol) es el protocolo de aplicación de la web. Funciona por solicitud y respuesta: el cliente envía método (GET, POST…), ruta, headers y cuerpo opcional; el servidor responde con código de estado, headers y cuerpo. Es *stateless* y normalmente viaja sobre TCP.
+HTTP es el protocolo de aplicación utilizado en la web para comunicar clientes y servidores. El cliente envía peticiones mediante métodos como GET, POST, PUT, DELETE y PATCH; el servidor devuelve una respuesta con un código de estado y un cuerpo opcional. Es un protocolo stateless.

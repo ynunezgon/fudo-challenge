@@ -1,7 +1,5 @@
 # Fudo
 
-Fudo es una plataforma de software en la nube para la gestión de restaurantes, bares, cafeterías y otros negocios gastronómicos. Nació en Buenos Aires en 2014 y hoy opera en varios países de Latinoamérica.
+Fudo es una plataforma de gestión integral para restaurantes que permite administrar tareas como el control de stock, las comandas y los cobros desde un mismo sistema.
 
-Centraliza la operación diaria del local: punto de venta, mesas y comandas, pedidos online y por delivery, control de stock, caja y reportes, accesible desde la web y desde aplicaciones móviles.
-
-Su objetivo es que los negocios gastronómicos, en su mayoría independientes, se digitalicen con herramientas simples. Además, viene sumando servicios financieros, como el procesamiento de pagos.
+Al centralizar esta información, ayuda a tener una visión general del funcionamiento del local, seguir las ventas y las existencias, y tomar decisiones sobre la operación diaria.
