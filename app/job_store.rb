@@ -1,8 +1,6 @@
 require "securerandom"
 
 module Fudo
-  # Registro del estado de cada pedido de creación de producto.
-  # Estados: pending -> completed | failed
   class JobStore
     def initialize
       @jobs = {}

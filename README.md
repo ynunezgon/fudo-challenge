@@ -1,6 +1,6 @@
-# Fudo Challenge — API de productos en Rack
+# API de productos
 
-API JSON hecha con Rack puro (sin Rails) que permite autenticarse, pedir la creación asíncrona de productos y consultarlos.
+API en Ruby y Rack para autenticarse, crear productos en segundo plano y consultarlos.
 
 Autora: Yanina Emiliana Nuñez Gonzalez
 
@@ -8,7 +8,7 @@ Autora: Yanina Emiliana Nuñez Gonzalez
 
 | Archivo | Qué es |
 | --- | --- |
-| `fudo.md`, `tcp.md`, `http.md` | Respuestas a los puntos 1 a 3 del challenge |
+| `fudo.md`, `tcp.md`, `http.md` | Notas sobre Fudo, TCP y HTTP |
 | `config.ru` | Punto de entrada de Rack |
 | `app/` | Código de la aplicación |
 | `public/openapi.yaml` | Especificación OpenAPI 3.0 (servida en `/openapi.yaml`) |
@@ -55,49 +55,44 @@ La API queda en `http://localhost:9292`.
 | `GET` | `/openapi.yaml` | No | Especificación, `Cache-Control: no-store` |
 | `GET` | `/AUTHORS` | No | Autora, `Cache-Control: public, max-age=86400` |
 
-## Ejemplo de punta a punta
+## Uso
 
 ```bash
-# 1. Autenticarse
+# Obtener un token
 TOKEN=$(curl -s -X POST localhost:9292/auth \
   -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"secret"}' | ruby -rjson -e 'puts JSON.parse(STDIN.read)["token"]')
 
-# 2. Pedir la creación (responde 202 con el job)
+# Solicitar un producto
 curl -i -X POST localhost:9292/products \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"name":"Pizza muzzarella"}'
 
-# 3. Al instante todavía no está
+# Consultar los productos disponibles
 curl -s localhost:9292/products -H "Authorization: Bearer $TOKEN"
 # {"data":[]}
 
-# 4. A los 5 segundos ya está
+# Volver a consultar después de cinco segundos
 sleep 5
 curl -s localhost:9292/products -H "Authorization: Bearer $TOKEN"
 # {"data":[{"id":1,"name":"Pizza muzzarella"}]}
 
-# 5. Respuesta comprimida si el cliente la pide
+# Solicitar gzip
 curl -s -D - -o /dev/null -H 'Accept-Encoding: gzip' \
   localhost:9292/products -H "Authorization: Bearer $TOKEN"
 # Content-Encoding: gzip
 ```
 
-## Arquitectura
+## Funcionamiento
 
-Pipeline de middlewares, de afuera hacia adentro:
+Las rutas de productos y jobs requieren un token Bearer. Los archivos
+`openapi.yaml` y `AUTHORS` son públicos. Rack se encarga de servirlos y de
+comprimir las respuestas cuando el cliente acepta gzip.
 
-1. `Rack::Deflater` comprime con gzip todo lo que sale, sólo si el request trae `Accept-Encoding: gzip`.
-2. `Rack::Static` sirve `openapi.yaml` y `AUTHORS` con su `Cache-Control`. Va antes de la autenticación porque son públicos.
-3. `Fudo::AuthMiddleware` exige `Authorization: Bearer <token>` en `/products` y `/jobs`.
-4. `Fudo::API` resuelve la ruta y ejecuta el handler.
-
-La creación asíncrona separa la aceptación del pedido de su procesamiento:
-
-1. `POST /products` valida el nombre, registra un job `pending` con `ready_at = ahora + 5 s`, lo encola y responde `202`.
-2. `Fudo::ProductWorker`, un hilo de fondo, saca jobs de una `Queue`, espera hasta su `ready_at`, crea el producto y marca el job `completed`.
-3. El cliente sigue el estado en `GET /jobs/:id` (la URL del header `Location`) o consulta `GET /products`.
+Al crear un producto, la API devuelve `202` y la URL del job en `Location`.
+El worker espera hasta la hora prevista, crea el producto y actualiza el estado
+del job. Se puede consultar esa URL para saber si sigue pendiente, terminó o falló.
 
 ## Estado en memoria
 

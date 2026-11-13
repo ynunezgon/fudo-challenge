@@ -3,7 +3,6 @@ require "time"
 require "rack"
 
 module Fudo
-  # Router y handlers de la API. Recibe sus dependencias por constructor.
   class API
     JSON_HEADERS = { "content-type" => "application/json" }.freeze
     MAX_NAME_LENGTH = 255
@@ -33,7 +32,6 @@ module Fudo
 
     private
 
-    # POST /auth  {"username": "...", "password": "..."}
     def authenticate(req)
       data = parse_json(req)
       username = data["username"]
@@ -49,12 +47,10 @@ module Fudo
       json(200, token: token, token_type: "Bearer", expires_in: @tokens.ttl)
     end
 
-    # GET /products
     def list_products
       json(200, data: @products.all)
     end
 
-    # POST /products  {"name": "..."}  ->  202 + job
     def create_product(req)
       name = parse_json(req)["name"]
       name = name.strip if name.is_a?(String)
@@ -68,7 +64,6 @@ module Fudo
       json(202, job_payload(job), "location" => location)
     end
 
-    # GET /jobs/:id
     def show_job(id)
       job = @jobs.find(id)
       job ? json(200, job_payload(job)) : error(404, "not_found")
@@ -85,7 +80,6 @@ module Fudo
 
     def valid_credentials?(username, password)
       expected = @users[username]
-      # secure_compare evita filtrar información por tiempos de respuesta.
       !expected.nil? && Rack::Utils.secure_compare(expected, password)
     end
 

@@ -1,10 +1,4 @@
 module Fudo
-  # Procesa en segundo plano los pedidos de creación de productos.
-  #
-  # Cada job lleva un `ready_at` (momento del pedido + delay). Como todos los
-  # jobs tienen el mismo delay y la cola es FIFO, un único hilo alcanza: cada
-  # job espera sólo lo que le falta, así que 10 pedidos simultáneos quedan
-  # disponibles a los ~5 segundos, no a los 50.
   class ProductWorker
     def initialize(products:, jobs:, delay: 5, logger: nil)
       @products = products
@@ -55,13 +49,13 @@ module Fudo
       job = @jobs.find(job_id)
       return unless job
 
+      # La espera se cuenta desde que llegó el pedido.
       wait = job[:ready_at] - Time.now
       sleep(wait) if wait.positive?
 
       product = @products.add(job[:name])
       @jobs.complete(job_id, product_id: product[:id])
     rescue StandardError => e
-      # Un job que falla no debe matar al worker.
       @logger&.error("job #{job_id} falló: #{e.message}")
       @jobs.fail(job_id, e.message)
     end

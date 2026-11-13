@@ -1,6 +1,4 @@
 module Fudo
-  # Persistencia en memoria de productos. Thread-safe: la escriben el worker
-  # y la leen los hilos de Puma al mismo tiempo.
   class ProductStore
     def initialize
       @products = []

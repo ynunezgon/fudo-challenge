@@ -1,7 +1,6 @@
 require "securerandom"
 
 module Fudo
-  # Emite y valida tokens opacos (Bearer). Vive en memoria del proceso.
   class TokenStore
     DEFAULT_TTL = 3600 # segundos
 

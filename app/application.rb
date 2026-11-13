@@ -9,13 +9,6 @@ require_relative "api"
 module Fudo
   PUBLIC_DIR = File.expand_path("../public", __dir__)
 
-  # Arma el pipeline completo utilizado por config.ru.
-  #
-  # Orden de middlewares (de afuera hacia adentro):
-  #   1. Rack::Deflater  -> comprime TODO lo que sale si el cliente manda Accept-Encoding: gzip
-  #   2. Rack::Static    -> sirve openapi.yaml y AUTHORS (públicos) con sus Cache-Control
-  #   3. AuthMiddleware  -> exige Bearer token en /products y /jobs
-  #   4. API             -> router y handlers
   def self.build_app(delay: 5, users: default_users)
     tokens   = TokenStore.new
     products = ProductStore.new

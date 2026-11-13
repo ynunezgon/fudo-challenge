@@ -1,7 +1,6 @@
 require "json"
 
 module Fudo
-  # Corta con 401 cualquier request a rutas protegidas sin un Bearer token válido.
   class AuthMiddleware
     PROTECTED_PREFIXES = ["/products", "/jobs"].freeze
 
