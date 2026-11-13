@@ -3,7 +3,7 @@ info:
   title: Fudo Products API
   version: 1.0.0
   description: |
-    API JSON construida con Rack (sin Rails).
+    API JSON construida con Rack.
 
     - Autenticación con token Bearer obtenido en `POST /auth`.
     - La creación de productos es asíncrona: `POST /products` responde `202 Accepted`

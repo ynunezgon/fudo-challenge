@@ -29,7 +29,7 @@ module Fudo
         return false unless data
 
         if data[:expires_at] <= @clock.call
-          @tokens.delete(token) # limpieza perezosa del token vencido
+          @tokens.delete(token) 
           return false
         end
         true
