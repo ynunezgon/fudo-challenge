@@ -60,7 +60,6 @@ Los tests usan un delay de 0,3 s para no esperar 5 segundos.
 | `POST` | `/auth` | No | `200` con token, `401` si las credenciales son inválidas |
 | `POST` | `/products` | Sí | `202` con el job y header `Location` |
 | `GET` | `/products` | Sí | `200` con los productos ya creados |
-| `GET` | `/products/:id` | Sí | `200` o `404` |
 | `GET` | `/jobs/:id` | Sí | `200` con el estado del pedido (`pending`, `completed`, `failed`) |
 | `GET` | `/openapi.yaml` | No | Especificación, `Cache-Control: no-store` |
 | `GET` | `/AUTHORS` | No | Autora, `Cache-Control: public, max-age=86400` |
@@ -109,23 +108,8 @@ La creación asíncrona separa la aceptación del pedido de su procesamiento:
 2. `Fudo::ProductWorker`, un hilo de fondo, saca jobs de una `Queue`, espera hasta su `ready_at`, crea el producto y marca el job `completed`.
 3. El cliente sigue el estado en `GET /jobs/:id` (la URL del header `Location`) o consulta `GET /products`.
 
-## Decisiones y trade-offs
+## Estado en memoria
 
-- **`202 Accepted` y no `201 Created`.** 201 indica que el recurso ya existe. Acá el producto se crea después, así que 202 describe lo que realmente pasa. El header `Location` apunta al recurso de estado del job.
-- **Un worker con `ready_at` en vez de un `sleep(5)` por pedido.** Todos los jobs tienen el mismo delay y la cola es FIFO, así que cada uno espera sólo lo que le falta: 10 pedidos simultáneos quedan listos a los ~5 s, no a los 50, con un único hilo extra.
-- **Thread-safety.** El worker y los hilos de Puma comparten los stores, así que cada store protege su estado con un `Mutex`. El GVL de Ruby no alcanza: no hace atómico un "leer `@next_id`, sumar 1, guardar".
-- **Puma con `workers 0`.** El estado vive en memoria del proceso. Con varios procesos cada uno tendría su copia, y un token emitido por uno no valdría en otro.
-- **Token opaco en memoria y no JWT.** Con una sola instancia es lo más simple, vence a la hora y se revoca borrándolo. JWT tiene sentido cuando varios servicios validan sin un store central.
-- **Credenciales por variables de entorno y comparadas con `Rack::Utils.secure_compare`** para no exponer diferencias de tiempo.
-- **`no-store` para `openapi.yaml`.** "Nunca cacheado" es `no-store`; `no-cache` permite guardar una copia si se revalida.
-- **Router sin dependencias.** Con pocas rutas, pattern matching sobre método y path es más legible que sumar una gema.
-- **Dependencias por constructor** (`Fudo.build_app`). Los tests arman la misma app que `config.ru`, con un delay corto.
-
-## Cómo lo llevaría a producción
-
-- Estado en Postgres y tokens en Redis, para poder correr varias instancias.
-- Una cola persistente (Sidekiq, RabbitMQ o SQS) con reintentos: hoy, si el proceso se cae, los jobs pendientes se pierden.
-- Header `Idempotency-Key` en `POST /products` para no duplicar productos cuando el cliente reintenta.
-- Contraseñas hasheadas con bcrypt, HTTPS y rate limiting en `/auth`.
-- Logs estructurados, métricas de la cola y alertas por jobs fallidos.
-- CI con tests, RuboCop y validación del `openapi.yaml`.
+Los productos, tokens y jobs se guardan en memoria y se pierden al reiniciar.
+Puma usa un solo proceso para compartir ese estado entre los hilos.
+Los stores usan `Mutex` para coordinar el acceso a los datos compartidos.

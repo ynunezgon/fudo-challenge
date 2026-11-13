@@ -29,9 +29,6 @@ class ProductsTest < ApiTest
     get job_url
     assert_equal "completed", json_body["status"]
     assert_equal 1, json_body["product_id"]
-
-    get "/products/1"
-    assert_equal "Empanada", json_body["name"]
   end
 
   def test_pedidos_simultaneos_quedan_listos_juntos

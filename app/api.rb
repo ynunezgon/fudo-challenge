@@ -23,7 +23,6 @@ module Fudo
       in ["POST", "/auth"]               then authenticate(req)
       in ["GET", "/products"]            then list_products
       in ["POST", "/products"]           then create_product(req)
-      in ["GET", %r{\A/products/(\d+)\z}] then show_product(Regexp.last_match(1).to_i)
       in ["GET", %r{\A/jobs/([\w-]+)\z}]  then show_job(Regexp.last_match(1))
       in [_, "/auth" | "/products"]      then error(405, "method_not_allowed")
       else error(404, "not_found")
@@ -53,12 +52,6 @@ module Fudo
     # GET /products
     def list_products
       json(200, data: @products.all)
-    end
-
-    # GET /products/:id
-    def show_product(id)
-      product = @products.find(id)
-      product ? json(200, product) : error(404, "not_found")
     end
 
     # POST /products  {"name": "..."}  ->  202 + job

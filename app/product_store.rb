@@ -21,8 +21,5 @@ module Fudo
       @mutex.synchronize { @products.dup }
     end
 
-    def find(id)
-      @mutex.synchronize { @products.find { |p| p[:id] == id } }
-    end
   end
 end

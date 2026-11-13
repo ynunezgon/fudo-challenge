@@ -119,29 +119,6 @@ paths:
               example:
                 error: invalid_name
                 message: name es obligatorio (texto de 1 a 255 caracteres).
-  /products/{id}:
-    get:
-      tags: [Products]
-      summary: Consultar un producto
-      operationId: getProduct
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            minimum: 1
-      responses:
-        "200":
-          description: Producto encontrado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Product"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
   /jobs/{id}:
     get:
       tags: [Jobs]
